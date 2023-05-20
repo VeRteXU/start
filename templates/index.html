@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exhibitions</title>
+</head>
+<body>
+    <h1>The Exhibition</h1>
+
+    <form action="{{ url_for('add') }}" method="post">
+        <input type="text" name="name" placeholder="Exhibition">
+        <input type="text" name="date" placeholder="Date">
+        <input type="text" name="location" placeholder="Location">
+        <input type="number" name="participants" placeholder="Number of Participants">
+        <input type="submit" value="Add Exhibition">
+    </form>
+
+    <form action="{{ url_for('delete') }}" method="post">
+        <input type="text" name="exhibition_id" placeholder="Exhibition ID to delete">
+        <input type="submit" value="Delete Exhibition">
+    </form>
+
+    <h2>Current Exhibitions</h2>
+    {% for exhibition in exhibitions %}
+        <p>
+            ID: {{ exhibition.id }}, Name: {{ exhibition.name }}, Date: {{ exhibition.date }}, Location: {{ exhibition.location }}, Participants: {{ exhibition.participants }}
+        </p>
+    {% endfor %}
+</body>
+</html>
