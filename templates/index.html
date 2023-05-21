@@ -23,7 +23,16 @@
     {% for exhibition in exhibitions %}
         <p>
             ID: {{ exhibition.id }}, Name: {{ exhibition.name }}, Date: {{ exhibition.date }}, Location: {{ exhibition.location }}, Participants: {{ exhibition.participants }}
+            <form action="{{ url_for('update') }}" method="post">
+                <input type="hidden" name="exhibition_id" value="{{ exhibition.id }}">
+                <input type="text" name="name" placeholder="New Name">
+                <input type="text" name="date" placeholder="New Date">
+                <input type="text" name="location" placeholder="New Location">
+                <input type="number" name="participants" placeholder="New Number of Participants">
+                <input type="submit" value="Update">
+            </form>
         </p>
     {% endfor %}
+
 </body>
 </html>

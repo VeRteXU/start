@@ -39,6 +39,24 @@ def delete():
 
     return redirect(url_for('index'))
 
+@app.route('/update', methods=['POST'])
+def update():
+    exhibition_id = request.form.get('exhibition_id')
+    name = request.form.get('name')
+    date = request.form.get('date')
+    location = request.form.get('location')
+    participants = request.form.get('participants')
+
+    exhibition = Exhibition.query.get(exhibition_id)
+    exhibition.name = name
+    exhibition.date = date
+    exhibition.location = location
+    exhibition.participants = participants
+
+    db.session.commit()
+
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
