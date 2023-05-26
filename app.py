@@ -7,7 +7,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///exhibitions.db'
 db = SQLAlchemy(app)
 api = Api(app)
 
-# Определение модели данных для выставки
+
 exhibition_model = api.model('Exhibition', {
     'id': fields.Integer(readonly=True, description='The unique identifier of an exhibition'),
     'name': fields.String(required=True, description='The name of the exhibition'),
@@ -23,7 +23,6 @@ class Exhibition(db.Model):
     location = db.Column(db.String(120), nullable=False)
     participants = db.Column(db.Integer, nullable=False)
 
-# Создание ресурса для операций CRUD с выставками
 @api.route('/exhibitions')
 class ExhibitionResource(Resource):
     @api.doc('list_exhibitions')
