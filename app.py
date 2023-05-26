@@ -1,9 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from flask_restx import Api, Resource, fields
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///exhibitions.db'
 db = SQLAlchemy(app)
+api = Api(app)
+
+# Определение модели данных для выставки
+exhibition_model = api.model('Exhibition', {
+    'id': fields.Integer(readonly=True, description='The unique identifier of an exhibition'),
+    'name': fields.String(required=True, description='The name of the exhibition'),
+    'date': fields.String(required=True, description='The date of the exhibition'),
+    'location': fields.String(required=True, description='The location of the exhibition'),
+    'participants': fields.Integer(required=True, description='The number of participants')
+})
 
 class Exhibition(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -12,50 +23,62 @@ class Exhibition(db.Model):
     location = db.Column(db.String(120), nullable=False)
     participants = db.Column(db.Integer, nullable=False)
 
-@app.route('/')
-def index():
-    exhibitions = Exhibition.query.all()
-    return render_template('index.html', exhibitions=exhibitions)
+# Создание ресурса для операций CRUD с выставками
+@api.route('/exhibitions')
+class ExhibitionResource(Resource):
+    @api.doc('list_exhibitions')
+    @api.marshal_list_with(exhibition_model)
+    def get(self):
+        '''List all exhibitions'''
+        exhibitions = Exhibition.query.all()
+        return exhibitions
 
-@app.route('/add', methods=['POST'])
-def add():
-    name = request.form.get('name')
-    date = request.form.get('date')
-    location = request.form.get('location')
-    participants = request.form.get('participants')
+    @api.doc('create_exhibition')
+    @api.expect(exhibition_model)
+    @api.marshal_with(exhibition_model, code=201)
+    def post(self):
+        '''Create a new exhibition'''
+        name = api.payload.get('name')
+        date = api.payload.get('date')
+        location = api.payload.get('location')
+        participants = api.payload.get('participants')
 
-    exhibition = Exhibition(name=name, date=date, location=location, participants=participants)
-    db.session.add(exhibition)
-    db.session.commit()
+        exhibition = Exhibition(name=name, date=date, location=location, participants=participants)
+        db.session.add(exhibition)
+        db.session.commit()
 
-    return redirect(url_for('index'))
+        return exhibition, 201
 
-@app.route('/delete', methods=['POST'])
-def delete():
-    exhibition_id = request.form.get('exhibition_id')
+@api.route('/exhibitions/<int:id>')
+@api.param('id', 'The exhibition identifier')
+class ExhibitionItemResource(Resource):
+    @api.doc('update_exhibition')
+    @api.expect(exhibition_model)
+    @api.marshal_with(exhibition_model)
+    def put(self, id):
+        '''Update an exhibition'''
+        exhibition = Exhibition.query.get(id)
+        if exhibition:
+            exhibition.name = api.payload.get('name')
+            exhibition.date = api.payload.get('date')
+            exhibition.location = api.payload.get('location')
+            exhibition.participants = api.payload.get('participants')
+            db.session.commit()
+            return exhibition
+        else:
+            return {'message': 'Exhibition not found'}, 404
 
-    Exhibition.query.filter_by(id=exhibition_id).delete()
-    db.session.commit()
-
-    return redirect(url_for('index'))
-
-@app.route('/update', methods=['POST'])
-def update():
-    exhibition_id = request.form.get('exhibition_id')
-    name = request.form.get('name')
-    date = request.form.get('date')
-    location = request.form.get('location')
-    participants = request.form.get('participants')
-
-    exhibition = Exhibition.query.get(exhibition_id)
-    exhibition.name = name
-    exhibition.date = date
-    exhibition.location = location
-    exhibition.participants = participants
-
-    db.session.commit()
-
-    return redirect(url_for('index'))
+    @api.doc('delete_exhibition')
+    @api.response(204, 'Exhibition deleted')
+    def delete(self, id):
+        '''Delete an exhibition'''
+        exhibition = Exhibition.query.get(id)
+        if exhibition:
+            db.session.delete(exhibition)
+            db.session.commit()
+            return '', 204
+        else:
+            return {'message': 'Exhibition not found'}, 404
 
 if __name__ == '__main__':
     with app.app_context():
